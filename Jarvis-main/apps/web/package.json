@@ -1,0 +1,59 @@
+{
+  "name": "k-comos-web",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "electron:dev": "concurrently -k \"npm:dev\" \"npm:electron:watch\" \"npm:electron:start\"",
+    "electron:watch": "tsc -p electron/tsconfig.json --watch --preserveWatchOutput",
+    "electron:start": "wait-on tcp:3000 file:dist-electron/main.js && cross-env ELECTRON_RENDERER_URL=http://localhost:3000 electron dist-electron/main.js",
+    "electron:build": "tsc -p electron/tsconfig.json",
+    "electron:package": "npm run build && npm run electron:build && electron-builder --win portable"
+  },
+  "dependencies": {
+    "next": "15.4.7",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "framer-motion": "11.11.11",
+    "lucide-react": "0.542.0",
+    "@supabase/supabase-js": "^2.49.8"
+  },
+  "devDependencies": {
+    "typescript": "5.9.2",
+    "@types/react": "19.1.9",
+    "@types/node": "24.3.0",
+    "tailwindcss": "3.4.17",
+    "postcss": "8.5.6",
+    "autoprefixer": "10.4.21",
+    "electron": "^37.2.0",
+    "electron-builder": "^26.0.12",
+    "concurrently": "^9.1.2",
+    "wait-on": "^8.0.3",
+    "cross-env": "^7.0.3"
+  },
+  "main": "dist-electron/main.js",
+  "build": {
+    "appId": "com.sitemind.app",
+    "productName": "SITE MIND",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist-electron/**/*",
+      ".next/**/*",
+      "public/**/*",
+      "out/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "dist-electron/main.js"
+    },
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "build/icon.ico"
+    }
+  }
+}

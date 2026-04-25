@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+node_modules/
+apps/web/dist-electron/
+apps/web/.next/
+apps/web/release/

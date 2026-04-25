@@ -1,0 +1,443 @@
+openapi: 3.1.0
+info:
+  title: K-COMOS Stage1 API
+  version: 1.0.0
+  description: Korean Commercial Development OS Stage 1 contract API
+servers:
+  - url: http://localhost:8000/v1
+security:
+  - bearerAuth: []
+paths:
+  /projects/{project_id}/category-comparison:
+    get:
+      tags: [market]
+      summary: Category comparison table
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - in: query
+          name: scenario_id
+          schema: {type: string, format: uuid}
+        - in: query
+          name: mode
+          schema: {$ref: '#/components/schemas/OutputMode'}
+        - in: query
+          name: page
+          schema: {type: integer, minimum: 1, default: 1}
+        - in: query
+          name: page_size
+          schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+        - in: query
+          name: band
+          schema: {$ref: '#/components/schemas/DecisionBand'}
+      responses:
+        '200':
+          description: Comparison table
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CategoryComparisonResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /projects/{project_id}/unsuitable-cards:
+    get:
+      tags: [tenant_validation]
+      summary: Unsuitable category cards
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - in: query
+          name: assessment_id
+          schema: {type: string, format: uuid}
+        - in: query
+          name: mode
+          schema: {$ref: '#/components/schemas/OutputMode'}
+      responses:
+        '200':
+          description: Cards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cards:
+                    type: array
+                    items: {$ref: '#/components/schemas/UnsuitableCategoryCard'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /projects/{project_id}/reliability:
+    get:
+      tags: [ai]
+      summary: Reliability indicator
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - in: query
+          name: module_name
+          schema: {type: string}
+        - in: query
+          name: target_id
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Reliability
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReliabilityIndicator'}
+  /projects/{project_id}/validation/{assessment_id}:
+    get:
+      tags: [tenant_validation]
+      summary: Tenant validation result
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - in: path
+          name: assessment_id
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Validation
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ValidationResultResponse'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /projects/{project_id}/pricing-recommendations:
+    get:
+      tags: [pricing]
+      summary: Pricing recommendations
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - in: query
+          name: unit_id
+          schema: {type: string, format: uuid}
+        - in: query
+          name: scenario_id
+          schema: {type: string, format: uuid}
+        - in: query
+          name: mode
+          schema: {$ref: '#/components/schemas/OutputMode'}
+      responses:
+        '200':
+          description: Pricing list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: {$ref: '#/components/schemas/PricingRecommendation'}
+  /projects/{project_id}/manual-adjustments:
+    post:
+      tags: [manual_adjustments]
+      summary: Create manual adjustment
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ManualAdjustmentCreateRequest'}
+            example:
+              module_name: pricing
+              field_name: recommended_monthly_rent_krw
+              target_entity_type: unit
+              target_entity_id: 11111111-1111-1111-1111-111111111111
+              after_value: 4800000
+              reason_code: local_market_override
+              reason_note: 최근 권리금 조건 반영
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ManualAdjustmentCreateResponse'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /projects/{project_id}/manual-adjustments/{adjustment_id}/reset:
+    post:
+      tags: [manual_adjustments]
+      summary: Reset manual adjustment
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - in: path
+          name: adjustment_id
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '202':
+          description: Reset accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reset: {type: boolean}
+                  recompute_job_id: {type: string}
+  /projects/{project_id}/zoning-screening/{run_id}:
+    get:
+      tags: [zoning]
+      summary: Zoning screening result
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - in: path
+          name: run_id
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Screening result
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ZoningScreeningResponse'}
+  /projects/{project_id}/crm/leads/{lead_id}/summary:
+    get:
+      tags: [crm]
+      summary: Lead summary
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - in: path
+          name: lead_id
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Lead summary
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CRMLeadSummary'}
+  /projects/{project_id}/reports/{report_run_id}/summary:
+    get:
+      tags: [reports]
+      summary: Report summary
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+        - in: path
+          name: report_run_id
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Report summary
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReportSummary'}
+  /analysis/jobs/{job_id}:
+    get:
+      tags: [analysis_jobs]
+      summary: Analysis job status
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Job status
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AnalysisJobStatus'}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    projectId:
+      in: path
+      name: project_id
+      required: true
+      schema: {type: string, format: uuid}
+  responses:
+    BadRequest:
+      description: Bad request
+    Forbidden:
+      description: Forbidden
+    NotFound:
+      description: Not found
+  schemas:
+    OutputMode:
+      type: string
+      enum: [internal, customer]
+    DecisionBand:
+      type: string
+      enum: [recommended, neutral, risky]
+    ZoningDecision:
+      type: string
+      enum: [permitted, prohibited, caution, manual_review]
+    CategoryComparisonRow:
+      type: object
+      required: [category_code, band, suitability_score, saturation_score, opportunity_score, risk_level, reason_summary, confidence]
+      properties:
+        category_code: {type: string}
+        band: {$ref: '#/components/schemas/DecisionBand'}
+        suitability_score: {type: number}
+        saturation_score: {type: number}
+        opportunity_score: {type: number}
+        risk_level: {type: string}
+        preferred_floor_type: {type: string}
+        preferred_unit_size: {type: string}
+        reason_summary: {type: string}
+        confidence: {type: number}
+        suggested_alternative: {type: string, nullable: true}
+    ReliabilityIndicator:
+      type: object
+      properties:
+        module_name: {type: string}
+        overall_confidence_score: {type: number}
+        freshness_score: {type: number}
+        source_quality_score: {type: number}
+        coverage_score: {type: number}
+        model_stability_score: {type: number}
+        missing_data_warning: {type: boolean}
+        observed_ratio: {type: number}
+        estimated_ratio: {type: number}
+        manual_review_recommended: {type: boolean}
+        explanation_note: {type: string}
+    UnsuitableCategoryCard:
+      type: object
+      properties:
+        category_code: {type: string}
+        rejection_level: {type: string}
+        poor_fit_reason: {type: string}
+        saturation_reason: {type: string}
+        demographic_mismatch_reason: {type: string}
+        location_unit_mismatch_reason: {type: string}
+        zoning_caution: {type: string}
+        pricing_burden_warning: {type: string}
+        alternatives:
+          type: array
+          items: {type: string}
+        operator_explanation: {type: string}
+        customer_explanation: {type: string}
+        confidence: {type: number}
+    ValidationAssessment:
+      type: object
+      properties:
+        assessment_id: {type: string, format: uuid}
+        tenant_validation_score: {type: number}
+        decision_band: {$ref: '#/components/schemas/DecisionBand'}
+        risk_level: {type: string}
+        suitability_score: {type: number}
+        saturation_score: {type: number}
+        opportunity_score: {type: number}
+    ValidationResultResponse:
+      type: object
+      properties:
+        assessment: {$ref: '#/components/schemas/ValidationAssessment'}
+        unsuitable_category_cards:
+          type: array
+          items: {$ref: '#/components/schemas/UnsuitableCategoryCard'}
+        alternatives:
+          type: array
+          items: {type: string}
+        reliability_indicator: {$ref: '#/components/schemas/ReliabilityIndicator'}
+        manual_adjustment_effects:
+          type: array
+          items: {type: object}
+        zoning_summary:
+          type: object
+          properties:
+            decision_status: {$ref: '#/components/schemas/ZoningDecision'}
+            message: {type: string}
+    PricingRecommendation:
+      type: object
+      properties:
+        unit_id: {type: string, format: uuid}
+        recommended_deposit_krw: {type: number}
+        recommended_monthly_rent_krw: {type: number}
+        lower_bound_krw: {type: number}
+        upper_bound_krw: {type: number}
+        pricing_confidence_score: {type: number}
+        assumptions: {type: object}
+    ManualAdjustmentCreateRequest:
+      type: object
+      required: [module_name, field_name, target_entity_type, target_entity_id, after_value, reason_code]
+      properties:
+        module_name: {type: string}
+        field_name: {type: string}
+        target_entity_type: {type: string}
+        target_entity_id: {type: string, format: uuid}
+        after_value: {}
+        reason_code: {type: string}
+        reason_note: {type: string}
+    ManualAdjustmentCreateResponse:
+      type: object
+      properties:
+        adjustment_id: {type: string, format: uuid}
+        approval_required: {type: boolean}
+        recompute_job_id: {type: string}
+    ZoningScreeningResult:
+      type: object
+      properties:
+        rule_id: {type: string, format: uuid}
+        decision_status: {$ref: '#/components/schemas/ZoningDecision'}
+        operator_message: {type: string}
+        customer_message: {type: string}
+        legal_basis_text: {type: string}
+        legal_reference_code: {type: string}
+        review_required: {type: boolean}
+        review_owner_user_id: {type: string, format: uuid, nullable: true}
+    ZoningScreeningResponse:
+      type: object
+      properties:
+        run_id: {type: string, format: uuid}
+        status: {type: string}
+        results:
+          type: array
+          items: {$ref: '#/components/schemas/ZoningScreeningResult'}
+    CRMLeadSummary:
+      type: object
+      properties:
+        lead_id: {type: string, format: uuid}
+        lead_type: {type: string}
+        lead_stage: {type: string}
+        lead_score: {type: number}
+        validation_assessment_id: {type: string, format: uuid, nullable: true}
+        report_run_id: {type: string, format: uuid, nullable: true}
+        next_followup_at: {type: string, format: date-time, nullable: true}
+    ReportSummary:
+      type: object
+      properties:
+        report_run_id: {type: string, format: uuid}
+        mode: {$ref: '#/components/schemas/OutputMode'}
+        status: {type: string}
+        section_status:
+          type: array
+          items:
+            type: object
+            properties:
+              section_key: {type: string}
+              ready: {type: boolean}
+        evidence_coverage_ratio: {type: number}
+        html_uri: {type: string}
+        pdf_uri: {type: string}
+    AnalysisJobStatus:
+      type: object
+      properties:
+        job_id: {type: string}
+        module: {type: string}
+        status: {type: string, enum: [queued, running, partial, succeeded, failed, cancelled]}
+        percent_progress: {type: integer}
+        partial_available: {type: boolean}
+        partial_payload_uri: {type: string, nullable: true}
+        retry_token: {type: string, nullable: true}
+        error:
+          type: object
+          nullable: true
+          properties:
+            code: {type: string}
+            message: {type: string}
+            retryable: {type: boolean}
+    CategoryComparisonResponse:
+      type: object
+      properties:
+        project_id: {type: string, format: uuid}
+        scenario_id: {type: string, format: uuid, nullable: true}
+        mode: {$ref: '#/components/schemas/OutputMode'}
+        rows:
+          type: array
+          items: {$ref: '#/components/schemas/CategoryComparisonRow'}
+        pagination:
+          type: object
+          properties:
+            page: {type: integer}
+            page_size: {type: integer}
+            total: {type: integer}
+        reliability_indicator: {$ref: '#/components/schemas/ReliabilityIndicator'}

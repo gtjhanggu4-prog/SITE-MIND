@@ -1,0 +1,21 @@
+-- 005_indexes.sql
+create index if not exists idx_projects_org_id on projects(organization_id);
+create index if not exists idx_project_files_project_id on project_files(project_id);
+create index if not exists idx_floor_plans_project_order on floor_plans(project_id, floor_order);
+create index if not exists idx_unit_plans_project_id on unit_plans(project_id);
+create index if not exists idx_similar_locations_project_rank on similar_locations(project_id, rank_order);
+create index if not exists idx_positioning_summaries_project on positioning_summaries(project_id);
+create index if not exists idx_tenant_recommendations_project_type on tenant_recommendations(project_id, recommendation_type);
+create index if not exists idx_tenant_risks_project on tenant_risks(project_id);
+create index if not exists idx_marketing_plans_project on marketing_plans(project_id);
+create index if not exists idx_marketing_channels_plan on marketing_channels(marketing_plan_id, sort_order);
+create index if not exists idx_cost_models_project on cost_models(project_id);
+create index if not exists idx_revenue_scenarios_project on revenue_scenarios(project_id, scenario_name);
+create index if not exists idx_leads_project_status on leads(project_id, status);
+create index if not exists idx_lead_memos_lead on lead_memos(lead_id, created_at desc);
+create index if not exists idx_contract_drafts_project_status on contract_drafts(project_id, status);
+create index if not exists idx_contract_versions_draft on contract_versions(contract_draft_id, version_no desc);
+create index if not exists idx_reports_project_type on reports(project_id, report_type);
+create index if not exists idx_dashboard_snapshots_project_date on dashboard_snapshots(project_id, snapshot_date desc);
+create index if not exists idx_activity_logs_org_created on activity_logs(organization_id, created_at desc);
+create index if not exists idx_org_members_user_org on organization_members(user_id, organization_id);

@@ -1,0 +1,54 @@
+version: '3.9'
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: komos-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-komos}
+      POSTGRES_USER: ${POSTGRES_USER:-komos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-komos}
+    ports:
+      - "5432:5432"
+    volumes:
+      - komos_pgdata:/var/lib/postgresql/data
+      - ../../db/migrations:/docker-entrypoint-initdb.d
+
+  redis:
+    image: redis:7-alpine
+    container_name: komos-redis
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile
+    container_name: komos-api
+    environment:
+      DATABASE_URL: postgresql+psycopg://komos:komos@db:5432/komos
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../../apps/api:/app
+    depends_on:
+      - db
+      - redis
+
+  web:
+    build:
+      context: ../../apps/web
+      dockerfile: Dockerfile
+    container_name: komos-web
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/v1
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../../apps/web:/app
+      - /app/node_modules
+    depends_on:
+      - api
+
+volumes:
+  komos_pgdata:
