@@ -11,7 +11,21 @@ import { desktopBridgeService } from "@/src/services/desktopBridgeService";
 import { prepareExport } from "@/src/lib/export/exportService";
 import { buildContractFileName, buildProfitFileName, buildReportFileName } from "@/src/lib/export/fileNaming";
 import { buildContractExportPayload, buildCrmExportPayload, buildProfitExportPayload, buildReportExportPayload } from "@/src/lib/export/payloadBuilders";
-import type { ContractDraft, Lead, MarketingPlan, Project, ProjectFile, ReportItem } from "@/src/types/site-mind";
+import type { ContractDraft, ContractTemplate, Lead, MarketingPlan, Project, ProjectFile, ReportItem } from "@/src/types/site-mind";
+
+const fallbackContractTemplate: ContractTemplate = {
+  id: "fallback-contract-template",
+  contractType: defaultContractDraft.contractType,
+  bodyTemplate:
+    "[상가 임대차계약서]\n임대인: SITE MIND\n임차인: {{tenantType}}\n층: {{floorLabel}}\n보증금: {{deposit}}원\n월세: {{monthlyRent}}원\n관리비: {{managementFee}}원\n계약기간: {{termMonths}}개월\n렌트프리: {{rentFreeMonths}}개월\n특약:\n{{specialClauses}}",
+  recommendedClauses: [],
+};
+
+const normalizeContractDraft = (draft?: Partial<ContractDraft> | null): ContractDraft => ({
+  ...defaultContractDraft,
+  ...(draft ?? {}),
+  specialClauses: Array.isArray(draft?.specialClauses) ? draft.specialClauses : defaultContractDraft.specialClauses,
+});
 
 export function useSiteMindState() {
   const [activeMenu, setActiveMenu] = useState("dashboard");
@@ -70,7 +84,7 @@ export function useSiteMindState() {
       setTenantRecommendations(bundle.tenantRecommendations);
       setCostModel(bundle.costModel);
       setLeads(bundle.leads);
-      setContractDraft(bundle.contractDraft);
+      setContractDraft(normalizeContractDraft(bundle.contractDraft));
       setReports(bundle.reports);
       setSelectedReportId(bundle.reports[0]?.id ?? "");
       setPositioningSummary(bundle.positioningSummary);
@@ -86,7 +100,7 @@ export function useSiteMindState() {
         setFiles(localSnapshot.files);
         setLeads(localSnapshot.leads);
         setCostModel(localSnapshot.costModel);
-        setContractDraft(localSnapshot.contractDraft);
+        setContractDraft(normalizeContractDraft(localSnapshot.contractDraft));
         setReports(localSnapshot.reports);
         setSelectedReportId(localSnapshot.selectedReportId);
       }
@@ -137,8 +151,19 @@ export function useSiteMindState() {
   const revenueScenarios = useMemo(() => generateScenarios(costModel), [costModel]);
 
   const selectedReport = reports.find((r) => r.id === selectedReportId) ?? reports[0];
-  const template = contractTemplates.find((t: any) => t.contractType === contractDraft.contractType) ?? contractTemplates[0];
-  const contractPreview = buildContractPreview({ ...contractDraft, projectName: project.name }, template);
+  const normalizedContractDraft = normalizeContractDraft(contractDraft);
+  const normalizedContractTemplates = useMemo(
+    () => (Array.isArray(contractTemplates) && contractTemplates.length > 0 ? contractTemplates : seedContractTemplates),
+    [contractTemplates],
+  );
+  const template =
+    normalizedContractTemplates.find((t: any) => t.contractType === normalizedContractDraft.contractType) ??
+    normalizedContractTemplates[0] ??
+    fallbackContractTemplate;
+  const contractPreview = useMemo(
+    () => buildContractPreview({ ...normalizedContractDraft, projectName: project.name }, template ?? fallbackContractTemplate),
+    [normalizedContractDraft, project.name, template],
+  );
 
   const projectSummary = useMemo(
     () => ({
