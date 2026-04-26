@@ -1,4 +1,4 @@
-# K-COMOS Stage 1 Starter
+# SITE MIND Stage 1 Starter
 
 Production-minded Stage 1 scaffold for Korean Commercial Development OS.
 
